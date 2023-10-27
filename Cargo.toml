@@ -1,0 +1,35 @@
+[package]
+name = "discord_bot"
+version = "0.1.0"
+authors = ["Zefanja Jobse <zefanjaj@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.33", features = ["rt", "rt-multi-thread"] }
+anyhow = "1.0"
+serde_json = { version = "1.0" }
+serde = { version = "1.0", features = ["derive"] }
+chrono = "0.4"
+warp = "0.3"
+flexi_logger = "0.27"
+log = "0.4"
+imageproc = "0.23"
+confy = "0.5"
+rusttype = "0.9"
+
+[dependencies.image]
+version = "0.24"
+default-features = false
+features = ["jpeg", "png"]
+
+[dependencies.serenity]
+version = "0.11"
+default-features = false
+features = ["client", "gateway", "rustls_backend", "model", "cache"]
+
+[dependencies.reqwest]
+version = "0.11"
+default-features = false
+features = ["rustls-tls", "json"]
