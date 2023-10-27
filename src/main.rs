@@ -333,7 +333,7 @@ pub async fn gen_img(small_mode: &str, map_image: &str) -> Result<String> {
         (img_size.y / 4.8) as i32,
         scale,
         &font,
-        &small_mode[..],
+        small_mode,
     );
     img2.save("./map_mode.jpg")?;
 
