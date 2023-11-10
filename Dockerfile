@@ -1,7 +1,8 @@
 FROM rust:1.67 as builder
 WORKDIR /usr/src/myapp
 COPY . .
-ARG github_token 
+ARG github_token
+ARG CARGO_NET_GIT_FETCH_WITH_CLI=true
 RUN git config --global credential.helper store && echo "https://zefanjajobse:${github_token}@github.com" > ~/.git-credentials && cargo install --path .
 
 FROM debian:bullseye-slim
