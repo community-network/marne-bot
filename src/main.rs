@@ -5,8 +5,9 @@ use imageproc::drawing::draw_text_mut;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serenity::{
+    builder::{CreateAttachment, EditProfile},
     client::{Client, Context, EventHandler},
-    model::gateway::Activity,
+    gateway::ActivityData,
     model::gateway::Ready,
     prelude::GatewayIntents,
 };
@@ -99,7 +100,7 @@ pub struct MarneServerInfo {
 #[serenity::async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _: Ready) {
-        let user = ctx.cache.current_user();
+        let user = ctx.cache.current_user().clone();
         log::info!("Logged in as {:#?}", user.name);
 
         let last_update = Arc::new(atomic::AtomicI64::new(0));
@@ -273,7 +274,7 @@ async fn status(ctx: Context, statics: Static) -> Result<()> {
                             .unwrap_or(&&server.map_name[..])
                     );
                     // change game activity
-                    ctx.set_activity(Activity::playing(server_info)).await;
+                    ctx.set_activity(Some(ActivityData::playing(server_info)));
 
                     let image_loc = gen_img(
                         small_modes.get(&server.game_mode[..]).unwrap_or(&""),
@@ -284,10 +285,11 @@ async fn status(ctx: Context, statics: Static) -> Result<()> {
                     .await?;
 
                     // change avatar
-                    let avatar =
-                        serenity::utils::read_image(image_loc).expect("Failed to read image");
-                    let mut user = ctx.cache.current_user();
-                    let _ = user.edit(&ctx, |p| p.avatar(Some(&avatar))).await;
+                    let avatar = CreateAttachment::path(image_loc)
+                        .await
+                        .expect("Failed to read image");
+                    let mut user = ctx.cache.current_user().clone();
+                    let _ = user.edit(ctx, EditProfile::new().avatar(&avatar)).await;
 
                     return Ok(());
                 }
@@ -295,7 +297,7 @@ async fn status(ctx: Context, statics: Static) -> Result<()> {
         }
         Err(e) => {
             let server_info = "¯\\_(ツ)_/¯ server not found";
-            ctx.set_activity(Activity::playing(server_info)).await;
+            ctx.set_activity(Some(ActivityData::playing(server_info)));
 
             anyhow::bail!(format!("Failed to get new serverinfo: {}", e))
         }

@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.33", features = ["rt", "rt-multi-thread"] }
+tokio = { version = "1.35", features = ["rt", "rt-multi-thread"] }
 anyhow = "1.0"
 serde_json = { version = "1.0" }
 serde = { version = "1.0", features = ["derive"] }
@@ -25,7 +25,7 @@ default-features = false
 features = ["jpeg", "png"]
 
 [dependencies.serenity]
-version = "0.11"
+version = "0.12"
 default-features = false
 features = ["client", "gateway", "rustls_backend", "model", "cache"]
 
