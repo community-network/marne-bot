@@ -153,9 +153,9 @@ impl EventHandler for Handler {
     }
 }
 
-async fn get(game: &String) -> Result<MarneServerList> {
+async fn get(game: &str) -> Result<MarneServerList> {
     let client = reqwest::Client::new();
-    let url = match game.as_str() {
+    let url = match game {
         "bfv" => "https://marne.io/api/v/srvlst/",
         _ => "https://marne.io/api/srvlst/",
     };
