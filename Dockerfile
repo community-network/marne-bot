@@ -9,6 +9,7 @@ FROM debian:bookworm-slim
 
 ENV token default_token_value
 ENV game bf1
+ENV set_banner_image true
 
 HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
   CMD curl -f http://127.0.0.1:3030/ || exit 1

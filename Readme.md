@@ -10,6 +10,7 @@ token: discord bot token
 game: (optional) game could be bf1 or bfv, defaults to bf1
 server_name: servername to track
 server_id: server id to track
+set_banner_image: (optional) if it has to set the banner image of the bot (defaults to true)
 ```
 
 ## Using the bot

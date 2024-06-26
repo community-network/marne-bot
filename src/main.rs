@@ -27,6 +27,7 @@ pub struct Static {
     pub server_name: Option<String>,
     pub server_id: Option<i64>,
     pub game: Option<String>,
+    pub set_banner_image: bool,
 }
 
 /// `MyConfig` implements `Default`
@@ -37,6 +38,7 @@ impl ::std::default::Default for Static {
             server_name: None,
             server_id: None,
             game: Some("bf1".into()),
+            set_banner_image: true,
         }
     }
 }
@@ -367,7 +369,14 @@ async fn status(ctx: &Context, statics: &Static) -> Result<()> {
                         .await
                         .expect("Failed to read image");
                     let mut user = ctx.cache.current_user().clone();
-                    let _ = user.edit(ctx, EditProfile::new().avatar(&avatar)).await;
+                    let mut new_profile = EditProfile::new().avatar(&avatar);
+                    if statics.set_banner_image {
+                        let banner = CreateAttachment::path("./info_image.jpg")
+                            .await
+                            .expect("Failed to read banner image");
+                        new_profile = new_profile.banner(&banner);
+                    }
+                    let _ = user.edit(ctx, new_profile).await;
 
                     return Ok(());
                 }
@@ -389,10 +398,10 @@ pub async fn gen_img(small_mode: &str, map_image: &str) -> Result<String> {
 
     let mut img2 = ImageReader::new(Cursor::new(img))
         .with_guessed_format()?
-        .decode()?
-        .brighten(-25);
+        .decode()?;
 
     img2.save("./info_image.jpg")?;
+    img2.brighten(-25);
 
     let scale = PxScale {
         x: (img2.width() / 3) as f32,
@@ -442,6 +451,16 @@ async fn main() -> anyhow::Result<()> {
         Ok(res) => Some(res),
         Err(_) => cfg.game,
     };
+    cfg.set_banner_image = match env::var("set_banner_image") {
+        Ok(res) => match res.as_str() {
+            "true" => true,
+            "t" => true,
+            "false" => false,
+            "f" => false,
+            _ => true,
+        },
+        Err(_) => cfg.set_banner_image,
+    };
     if env::var("server_name").is_ok() || env::var("server_id").is_ok() {
         cfg.server_name = match env::var("server_name") {
             Ok(res) => Some(res),
@@ -454,7 +473,6 @@ async fn main() -> anyhow::Result<()> {
             }
         };
     }
-    println!("{:#?}", cfg);
     confy::store_path("config.txt", cfg.clone()).unwrap();
 
     // Login with a bot token from the environment
