@@ -1,9 +1,9 @@
+use ab_glyph::{FontRef, PxScale};
 use anyhow::Result;
 use chrono::Utc;
 use image::{io::Reader as ImageReader, Rgba};
 use imageproc::drawing::draw_text_mut;
 use regex::Regex;
-use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serenity::{
     builder::{CreateAttachment, EditProfile},
@@ -12,7 +12,7 @@ use serenity::{
     model::gateway::Ready,
     prelude::GatewayIntents,
 };
-use std::{collections::HashMap, io::Cursor};
+use std::{collections::HashMap, env, io::Cursor};
 use std::{
     sync::{atomic, Arc},
     time,
@@ -107,8 +107,7 @@ impl EventHandler for Handler {
         let last_update = Arc::new(atomic::AtomicI64::new(0));
         let last_update_clone = Arc::clone(&last_update);
 
-        let cfg: Static = confy::load_path("config.txt").unwrap();
-
+        let cfg: Static = confy::load_path("config.txt").unwrap_or_default();
         if let Some(ref server_name) = cfg.server_name {
             log::info!("Started monitoring server with name: {}", server_name);
         } else if let Some(server_id) = cfg.server_id {
@@ -395,14 +394,13 @@ pub async fn gen_img(small_mode: &str, map_image: &str) -> Result<String> {
 
     img2.save("./info_image.jpg")?;
 
-    let scale = Scale {
+    let scale = PxScale {
         x: (img2.width() / 3) as f32,
         y: (img2.height() as f32 / 1.7),
     };
-    let font_name = Vec::from(include_bytes!("Futura.ttf") as &[u8]);
-    let font: Font = Font::try_from_vec(font_name).unwrap();
+    let font = FontRef::try_from_slice(include_bytes!("Futura.ttf") as &[u8]).unwrap();
 
-    let img_size = Scale {
+    let img_size = PxScale {
         x: img2.width() as f32,
         y: img2.height() as f32,
     };
@@ -428,19 +426,35 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|e| panic!("Logger initialization failed with {}", e))
         .start()?;
 
-    let cfg: Static = match confy::load_path("config.txt") {
+    let mut cfg: Static = match confy::load_path("config.txt") {
         Ok(config) => config,
         Err(e) => {
             log::error!("error in config.txt: {}", e);
             log::warn!("changing back to default..");
-            Static {
-                token: "".into(),
-                server_name: None,
-                server_id: Some(0),
-                game: Some("bf1".into()),
-            }
+            Static::default()
         }
     };
+    cfg.token = match env::var("token") {
+        Ok(res) => res,
+        Err(_) => cfg.token,
+    };
+    cfg.game = match env::var("game") {
+        Ok(res) => Some(res),
+        Err(_) => cfg.game,
+    };
+    if env::var("server_name").is_ok() || env::var("server_id").is_ok() {
+        cfg.server_name = match env::var("server_name") {
+            Ok(res) => Some(res),
+            Err(_) => {
+                cfg.server_id = match env::var("server_id") {
+                    Ok(res) => Some(res.parse::<i64>().unwrap_or_default()),
+                    Err(_) => None,
+                };
+                None
+            }
+        };
+    }
+    println!("{:#?}", cfg);
     confy::store_path("config.txt", cfg.clone()).unwrap();
 
     // Login with a bot token from the environment
